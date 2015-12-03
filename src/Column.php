@@ -75,14 +75,6 @@ class Column
     }
 
     /**
-     * @return string
-     */
-    public function getMapping()
-    {
-        return $this->mapping;
-    }
-
-    /**
      * @return integer
      */
     public function getWeight()

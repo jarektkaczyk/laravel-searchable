@@ -24,8 +24,8 @@ interface Parser
     /**
      * Parse searchable columns.
      *
-     * @param  array|string $columns
+     * @param  array $columns
      * @return array
      */
-    public function parseWeights($columns);
+    public function parseWeights(array $columns);
 }

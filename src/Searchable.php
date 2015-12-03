@@ -45,7 +45,7 @@ class Searchable
          */
         Builder::macro('search', function (
             $keywords,
-            $columns,
+            array $columns,
             $fulltext = true,
             $threshold = null,
             $groupBy = 'id'
@@ -79,20 +79,24 @@ class Searchable
      * Build the search subquery.
      *
      * @param  array  $words
-     * @param  array  $mappings
+     * @param  array  $columns
      * @param  string $groupBy
      * @param  float  $threshold
      * @return \Sofa\Searchable\Subquery
      */
-    protected function buildSubquery(array $words, array $mappings, $groupBy, $threshold)
+    protected function buildSubquery(array $words, array $columns, $groupBy, $threshold)
     {
-        $columns = $this->columns($mappings);
+        $columns = $this->columns($columns);
 
-        $this->threshold = (is_null($threshold))
-                        ? array_sum($columns->getWeights()) / 4
-                        : (float) $threshold ;
+        if (is_null($threshold)) {
+            $this->threshold = array_reduce($columns, function ($sum, $column) {
+                return $sum + $column->getWeight() / 4;
+            });
+        } else {
+            $this->threshold = (float) $threshold;
+        }
 
-        if (!str_contains($groupBy, '.')) {
+        if (strpos($groupBy, '.') === false) {
             $groupBy = $this->query->from . '.' . $groupBy;
         }
 
@@ -112,7 +116,7 @@ class Searchable
      * @param  float $threshold
      * @return void
      */
-    protected function addSearchClauses(ColumnCollection $columns, array $words, $threshold)
+    protected function addSearchClauses(array $columns, array $words, $threshold)
     {
         $whereBindings = $this->searchSelect($columns, $words);
 
@@ -132,7 +136,7 @@ class Searchable
      * @param  array $words
      * @return array
      */
-    protected function searchSelect(ColumnCollection $columns, array $words)
+    protected function searchSelect(array $columns, array $words)
     {
         $cases = $bindings = [];
 
@@ -157,7 +161,7 @@ class Searchable
      * @param  array $words
      * @return void
      */
-    protected function searchWhere(ColumnCollection $columns, array $words, array $bindings)
+    protected function searchWhere(array $columns, array $words, array $bindings)
     {
         $operator = $this->getLikeOperator();
 
@@ -263,8 +267,7 @@ class Searchable
      */
     protected function isLeftMatching($word)
     {
-        return ends_with($word, $this->parser->wildcard());
-        // return ends_with($word, '*');
+        return substr($word, -1) === $this->parser->wildcard();
     }
 
     /**
@@ -275,8 +278,9 @@ class Searchable
      */
     protected function isWildcard($word)
     {
-        return ends_with($word, $this->parser->wildcard()) && starts_with($word, $this->parser->wildcard());
-        // return ends_with($word, '*') && starts_with($word, '*');
+        $wildcard = $this->parser->wildcard();
+
+        return preg_match("/^\\{$wildcard}.+\\{$wildcard}$/", $word);
     }
 
     /**
@@ -299,36 +303,29 @@ class Searchable
      * Create searchable columns collection off of the simple strings.
      *
      * @param  array $columns
-     * @return \Sofa\Searchable\ColumnCollection
+     * @return \Sofa\Searchable\Column[]
      */
     protected function columns(array $columns)
     {
-        $columns = is_array($columns) ? $columns : (array) $columns;
-
-        $collection = new ColumnCollection;
-
         $grammar = $this->getGrammar();
 
-        // Here we loop through the search mappings in order to join related tables
-        // appropriately and build a searchable column collection, which we will
-        // use to build select and where clauses with correct table prefixes.
-        foreach ($columns as $qualifiedColumn => $weight) {
+        return array_map(function ($qualifiedColumn, $weight) use ($grammar) {
             if (strpos($qualifiedColumn, '.') !== false) {
                 list($table, $column) = explode('.', $qualifiedColumn);
-
-                $collection->add(
-                    new Column($grammar, $table, $column, $qualifiedColumn, $weight)
-                );
-            } else {
-                $collection->add(
-                    new Column($grammar, $this->query->from, $qualifiedColumn, $qualifiedColumn, $weight)
-                );
+                return new Column($grammar, $table, $column, $qualifiedColumn, $weight);
             }
-        }
 
-        return $collection;
+            return new Column($grammar, $this->query->from, $qualifiedColumn, $qualifiedColumn, $weight);
+        }, array_keys($columns), $columns);
     }
 
+    /**
+     * Proxy method calls to the underlying query for convenience.
+     *
+     * @param  string $method
+     * @param  array $params
+     * @return mixed
+     */
     public function __call($method, $params)
     {
         return call_user_func_array([$this->query, $method], $params);

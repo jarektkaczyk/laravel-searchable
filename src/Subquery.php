@@ -2,9 +2,8 @@
 
 namespace Sofa\Searchable;
 
+use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Expression;
-use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 
 class Subquery extends Expression
 {
@@ -25,28 +24,26 @@ class Subquery extends Expression
     /**
      * Create new subquery instance.
      *
-     * @param \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder
+     * @param \Illuminate\Database\Query\Builder
      * @param string $alias
      */
-    public function __construct($query, $alias = null)
+    public function __construct(Builder $query, $alias = null)
     {
-        if ($query instanceof EloquentBuilder) {
-            $query = $query->getQuery();
-        }
-
-        $this->setQuery($query);
-
+        $this->query = $query;
         $this->alias = $alias;
     }
 
     /**
      * Set underlying query builder.
      *
-     * @param \Illuminate\Database\Query\Builder $query
+     * @param  \Illuminate\Database\Query\Builder $query
+     * @return $this
      */
-    public function setQuery(QueryBuilder $query)
+    public function setQuery(Builder $query)
     {
         $this->query = $query;
+
+        return $this;
     }
 
     /**
@@ -105,11 +102,11 @@ class Subquery extends Expression
      *
      * @param  string $property
      * @param  mixed  $value
-     * @return mixed
+     * @return void
      */
     public function __set($property, $value)
     {
-        return $this->query->{$property} = $value;
+        $this->query->{$property} = $value;
     }
 
     /**
@@ -128,10 +125,12 @@ class Subquery extends Expression
      *
      * @param  string $method
      * @param  array  $params
-     * @return mixed
+     * @return $this|mixed
      */
     public function __call($method, $params)
     {
-        return call_user_func_array([$this->query, $method], $params);
+        $result = call_user_func_array([$this->query, $method], $params);
+
+        return ($result === $this->query) ? $this : $result;
     }
 }

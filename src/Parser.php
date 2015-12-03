@@ -32,24 +32,10 @@ class Parser implements Contracts\Parser
     /**
      * Parse searchable columns.
      *
-     * @param  array|string $columns
+     * @param  array $columns
      * @return array
      */
-    public function parseWeights($columns)
-    {
-        if (is_string($columns)) {
-            $columns = func_get_args();
-        }
-
-        return $this->addMissingWeights($columns);
-    }
-
-    /**
-     * Add search weight to the columns if missing.
-     *
-     * @param array $columns
-     */
-    protected function addMissingWeights(array $columns)
+    public function parseWeights(array $columns)
     {
         $parsed = [];
 

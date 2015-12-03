@@ -24,7 +24,7 @@ class ServiceProvider extends BaseProvider
      */
     public function register()
     {
-        $this->app->bind(Contracts\Parser::class, function () {
+        $this->app->bind(Contracts\Parser::class, function ($app) {
             $weight   = $app['config']->get('searchable.weight', 1);
             $wildcard = $app['config']->get('searchable.wildcard', '*');
 

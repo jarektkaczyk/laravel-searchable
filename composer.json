@@ -1,0 +1,33 @@
+{
+    "name": "sofa/searchable",
+    "description": "Extension for Laravel Query Builder providing simple yet powerful fulltext search.",
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/jarektkaczyk/searchable/issues",
+        "source": "https://github.com/jarektkaczyk/searchable"
+    },
+    "keywords": ["laravel", "eloquent", "searchable"],
+    "authors": [
+        {
+            "name": "Jarek Tkaczyk",
+            "email": "jarek@softonsofa.com",
+            "homepage": "http://softonsofa.com/",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.5.9",
+        "illuminate/contracts": "~5.1",
+        "illuminate/database": "~5.1"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "2.3.3",
+        "crysalead/kahlan": "^1.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sofa\\Searchable\\": "src"
+        }
+    },
+    "minimum-stability": "stable"
+}
